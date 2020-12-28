@@ -23,6 +23,8 @@ class TodoListViewController: UITableViewController {
 //        this will actually load the items added into the itemArray, but will only do so if there have actually been additional items added.
         if let items = defaults.array(forKey: "ToDoListArray") as? [Item] {
             itemArray = items
+//            mark
+            
         }
         
         let newItem = Item()
