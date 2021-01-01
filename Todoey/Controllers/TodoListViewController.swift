@@ -28,9 +28,6 @@ class TodoListViewController: SwipeViewController {
         super.viewDidLoad()
 //                    print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist"))
         tableView.separatorStyle = .none
-        
-        
-        
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -43,9 +40,7 @@ class TodoListViewController: SwipeViewController {
                 
             navBar.backgroundColor = navBarColour
             navBar.tintColor = ContrastColorOf(navBarColour, returnFlat: true)
-                
-                navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : ContrastColorOf(navBarColour, returnFlat: true)]
-
+            navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : ContrastColorOf(navBarColour, returnFlat: true)]
             searchBar.barTintColor = navBarColour
             }
         }
@@ -55,13 +50,12 @@ class TodoListViewController: SwipeViewController {
     // MARK: - this function (just start typing tableview) provdies number of rows count
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return todoItems?.count ?? 1
-        
     }
+    
     // MARK: - this function (just start typing tableview) gets the data and populates each cell
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
-        
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
             
@@ -74,7 +68,6 @@ class TodoListViewController: SwipeViewController {
             cell.accessoryType = item.done ? .checkmark : .none
         } else {
             cell.textLabel?.text =  "No Items Added"
-            
         }
         
         return cell
@@ -85,7 +78,6 @@ class TodoListViewController: SwipeViewController {
         
         // MARK: - Method to give cell a checkmark as accessory - check and uncheck
         if let item = todoItems?[indexPath.row] {
-            
             do {
                 try realm.write {
                     //                        if you preferred to delete item instead of checkbox, you'd swap out the next 2 lines
@@ -122,7 +114,6 @@ class TodoListViewController: SwipeViewController {
                         let newItem = Item()
                         newItem.title = textField.text!
                         newItem.dateCreated = Date()
-                        
                         currentCategory.items.append(newItem)
                     }
                 } catch {
@@ -166,5 +157,20 @@ class TodoListViewController: SwipeViewController {
     }
 }
 
+// MARK: - Searchbar delegate method
 
+extension TodoListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "title", ascending: true)
+        tableView.reloadData()
+    }
 
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            loadItems()
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+}
