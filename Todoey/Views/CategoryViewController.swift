@@ -8,30 +8,61 @@
 
 import UIKit
 import RealmSwift
-import SwipeCellKit
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeViewController {
     
     let realm = try! Realm()
     
     var categories: Results<Category>?
-        
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         loadCategories()
+        tableView.separatorStyle = .none
+        
     }
+    
+    
+    
+    override func viewWillAppear(_ animated: Bool) {
+   
+        guard let navBar = navigationController?.navigationBar else {
+            fatalError("Navigation Controller does not exist.")
+            
+        }
+        navBar.backgroundColor = UIColor(hexString: "1D9BF6")
+        navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : UIColor.white]
+    }
+    
     // MARK: - Tableview Datasource Methods
     // (set up datasource so we can display all the categories inside persistent container)
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-//        nil coalescing Operator
+        //        nil coalescing Operator
         return categories?.count ?? 1
     }
     
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added Yet"
+        
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        
+        if let category = categories?[indexPath.row] {
+                
+            cell.textLabel?.text = category.name
+        
+            guard let categoryColour = UIColor(hexString: category.colour) else {
+                fatalError()
+                
+            }
+        cell.backgroundColor = categoryColour
+            cell.textLabel?.textColor = ContrastColorOf(categoryColour, returnFlat: true)
+
+        }
+        
         return cell
+        
     }
     // MARK: - Tableview Delegate Methods
     
@@ -51,6 +82,7 @@ class CategoryViewController: UITableViewController {
     
     // MARK: - Data Manipulation Methods
     // (set up data manipulation methods - save and load data)
+    // MARK: - Save
     func save(category: Category) {
         do {
             try realm.write {
@@ -61,30 +93,45 @@ class CategoryViewController: UITableViewController {
         }
         self.tableView.reloadData()
     }
-    
+    // MARK: - Load
     func loadCategories() {
         
         
         categories = realm.objects(Category.self)
-
+        
         tableView.reloadData()
     }
-
+    
+    // MARK: - Delete Data from Swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        if let categoryForDelection = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(categoryForDelection)
+                }
+            } catch {
+                print("Error deleting category, \(error)")
+            }
+        }
+    }
+    
     // MARK: - Add New Categories
     // (add button pressed ib action)
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textField = UITextField()
         let alert = UIAlertController(title: "Add new category", message: "", preferredStyle: .alert)
-       
+        
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
             //what happens when user clicks Add button on the alert
             let newCategory = Category()
             newCategory.name = textField.text!
+            newCategory.colour = UIColor.randomFlat().hexValue()
             
             self.save(category: newCategory)
-        
-    }
+            
+        }
         alert.addAction(action)
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder =  "Create new category"
@@ -93,7 +140,3 @@ class CategoryViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
 }
-
-    
-    
-
